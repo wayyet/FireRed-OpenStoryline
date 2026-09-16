@@ -1,0 +1,51 @@
+[
+ {
+  "file": "voice_en_01.ogg",
+  "text": "Giant golden rooster at this KL mall!",
+  "audio_us": 2400000,
+  "sub_start": 0,
+  "sub_dur": 5033333
+ },
+ {
+  "file": "voice_en_02.ogg",
+  "text": "Flowers everywhere — every pic pops!",
+  "audio_us": 2600000,
+  "sub_start": 5033333,
+  "sub_dur": 5033333
+ },
+ {
+  "file": "voice_en_03.ogg",
+  "text": "Blossoms and lanterns bring the Chinese vibes!",
+  "audio_us": 3000000,
+  "sub_start": 10066666,
+  "sub_dur": 5000000
+ },
+ {
+  "file": "voice_en_04.ogg",
+  "text": "Every corner is a photo spot!",
+  "audio_us": 2000000,
+  "sub_start": 15066666,
+  "sub_dur": 4566667
+ },
+ {
+  "file": "voice_en_05.ogg",
+  "text": "Lattice and red lanterns, so photogenic!",
+  "audio_us": 3000000,
+  "sub_start": 19633333,
+  "sub_dur": 4500000
+ },
+ {
+  "file": "voice_en_06.ogg",
+  "text": "Even stumbled on a bonsai show!",
+  "audio_us": 2000000,
+  "sub_start": 24133333,
+  "sub_dur": 5500000
+ },
+ {
+  "file": "voice_en_07.ogg",
+  "text": "Pavilion Bukit Jalil — don't miss it!",
+  "audio_us": 3800000,
+  "sub_start": 29633333,
+  "sub_dur": 5533333
+ }
+]

@@ -1,0 +1,2 @@
+# kuaishou-fx-used-history
+

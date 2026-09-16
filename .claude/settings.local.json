@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PYTHONPATH=src ./.venv/Scripts/python.exe -c \"import agent_fastapi\")",
+      "Bash(./.venv/Scripts/python.exe -m pip list)",
+      "Bash(./.venv/Scripts/python.exe -c \"import importlib.metadata as m; [print\\(p, m.version\\(p\\)\\) for p in ['langgraph','langgraph-prebuilt','langgraph-checkpoint','langgraph-sdk']]\")",
+      "Bash(./.venv/Scripts/python.exe -c \"import langgraph,sys; print\\(langgraph.__file__\\); print\\(getattr\\(langgraph,'__version__','n/a'\\)\\)\")",
+      "PowerShell($ffp = try { \\(Get-Command ffprobe -ErrorAction Stop\\).Source } catch { $null }; $ffm = try { \\(Get-Command ffmpeg -ErrorAction Stop\\).Source } catch { $null }; Write-Host \\('ffprobe: ' + \\($ffp -or 'NOT FOUND'\\)\\); Write-Host \\('ffmpeg: ' + \\($ffm -or 'NOT FOUND'\\)\\); if \\(-not $ffp\\) { Write-Host '⚠️ PATH 尚未刷新，重启 PowerShell 或手工 Import 注册表'; [Environment]::SetEnvironmentVariable\\('Path',[Environment]::GetEnvironmentVariable\\('Path','Machine'\\),'Process'\\); $ffp = try { \\(Get-Command ffprobe -ErrorAction Stop\\).Source } catch { $null }; Write-Host \\('retry after refresh: ' + \\($ffp -or 'STILL NOT FOUND'\\)\\) })",
+      "PowerShell(Get-Process python -ErrorAction SilentlyContinue | Select-Object -Property ProcessId, @{n='Cmd';e={ $_.CommandLine.Substring\\(0,[Math]::Min\\(120,$_.CommandLine.Length\\)\\) }} | Format-Table -AutoSize)",
+      "PowerShell(Get-Process python -ErrorAction SilentlyContinue | Select-Object ProcessId, @{n='StartTime';e={ $_.StartTime }} | Sort-Object ProcessId | Format-Table -AutoSize)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)",
+      "Bash(e:/Documents/kuaishou/FireRed-OpenStoryline/.venv/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe -i C:/Users/wayyet/AppData/Local/Temp/claude/e--Documents-kuaishou/67442b5c-5a30-46db-ab42-d37f150c452c/scratchpad/cover_dlg.png -vf crop=400:295:425:488,scale=1200:-1:flags=lanczos C:/Users/wayyet/AppData/Local/Temp/claude/e--Documents-kuaishou/67442b5c-5a30-46db-ab42-d37f150c452c/scratchpad/tpl_zoom.png -y -loglevel error)",
+      "Bash(e:/Documents/kuaishou/FireRed-OpenStoryline/.venv/Lib/site-packages/imageio_ffmpeg/binaries/ffmpeg-win-x86_64-v7.1.exe -i C:/Users/wayyet/AppData/Local/Temp/claude/e--Documents-kuaishou/67442b5c-5a30-46db-ab42-d37f150c452c/scratchpad/filter.png -vf crop=560:600:340:280,scale=1120:-1:flags=lanczos C:/Users/wayyet/AppData/Local/Temp/claude/e--Documents-kuaishou/67442b5c-5a30-46db-ab42-d37f150c452c/scratchpad/filter_zoom.png -y -loglevel error)",
+      "WebSearch",
+      "PowerShell(Get-ChildItem -Path \"C:\\\\Users\\\\wayyet\\\\AppData\\\\Local\\\\JianYingPro\\\\User Data\\\\Projects\\\\com.lveditor.draft\" -Directory | Sort-Object LastWriteTime -Descending | Select-Object -First 3 | ForEach-Object { Write-Host \"=== $\\($_.Name\\) === $\\($_.LastWriteTime\\)\"; Get-ChildItem $_.FullName -File | Select-Object Name, Length | Format-Table -AutoSize })"
+    ]
+  },
+  "spinnerTipsEnabled": true
+}

@@ -73,3 +73,21 @@ data/**
 !data/prompts/
 !data/prompts/**
 resource/**
+
+# === 本机 Claude Code 运行时元数据（不属项目源码）===
+# 注：用户决定把 .claude/skills/ 整目录原样入仓，
+# 但 .claude/ 顶层的 settings 文件和锁文件不属于 skill 本身。
+# 此处忽略与 .claude/skills/ 无冲突；如需连 .claude/skills/ 也忽略，
+# 把下面三行改成 `.claude/`。
+
+# === bridge 模块运行数据 ===
+bridge/input/
+bridge/output/
+bridge/logs/
+bridge/tmp/
+bridge/openstoryline/
+bridge/route_a/
+bridge/route_db/
+bridge/assets/
+bridge/cases/*/scratchpad/
+bridge/cases/*/tmp/
