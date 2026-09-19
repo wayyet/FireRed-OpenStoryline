@@ -919,6 +919,12 @@ UPLOAD_MEDIA_ALL_BURST = _env_int("RATE_LIMIT_UPLOAD_MEDIA_ALL_BURST", 2000)
 UPLOAD_MEDIA_COUNT_ALL_RPM    = _env_int("RATE_LIMIT_UPLOAD_MEDIA_COUNT_ALL_RPM", UPLOAD_MEDIA_ALL_RPM)
 UPLOAD_MEDIA_COUNT_ALL_BURST  = _env_int("RATE_LIMIT_UPLOAD_MEDIA_COUNT_ALL_BURST", UPLOAD_MEDIA_ALL_BURST)
 
+# 「清理缓存」端点(POST /api/system/clean-cache):破坏性 IO,严格限流防误连点
+CLEAN_CACHE_ALL_RPM   = _env_int("RATE_LIMIT_CLEAN_CACHE_ALL_RPM", 2)
+CLEAN_CACHE_ALL_BURST = _env_int("RATE_LIMIT_CLEAN_CACHE_ALL_BURST", 1)
+CLEAN_CACHE_IP_RPM    = _env_int("RATE_LIMIT_CLEAN_CACHE_IP_RPM", 2)
+CLEAN_CACHE_IP_BURST  = _env_int("RATE_LIMIT_CLEAN_CACHE_IP_BURST", 1)
+
 MEDIA_GET_ALL_RPM   = _env_int("RATE_LIMIT_MEDIA_GET_ALL_RPM", 600)
 MEDIA_GET_ALL_BURST = _env_int("RATE_LIMIT_MEDIA_GET_ALL_BURST", 120)
 
@@ -2545,6 +2551,71 @@ async def clear_session_chat(session_id: str):
         clear_ai_transition_cancelled(_ai_transition_cancel_cache_root(app.state.cfg), session_id)
         await store.save_session_state(sess)
     return JSONResponse({"ok": True})
+
+
+# -------------------------
+# System (cross-session utilities)
+# -------------------------
+@api.post("/system/clean-cache")
+async def clean_cache_endpoint(request: Request):
+    """OpenStoryline Web UI「清理缓存」按钮对应端点。
+
+    行为:
+    - 调用 ``auto-video-editor/nodes/node_01_clean_cache.py`` 的 ``clean_cache`` 函数,
+      清理 ``config.CACHE_PATHS_TO_CLEAN`` 里的剪映 / OpenStoryline / jianying_workflow_tmp
+      三类路径。
+    - 不在 LangGraph ``graph.invoke`` 时自动跑(2026-09 计划改造后)。
+    - 速率限制:全局 + 每 IP 双重桶,默认 burst=1 rpm=2(防误连点)。
+    - 路径定位:``AUTO_VIDEO_EDITOR_DIR`` 环境变量优先,默认 ``E:\\Documents\\kuaishou\\auto-video-editor``。
+    """
+    # ---- 速率限制(双桶:全局 + 每 IP)----
+    ip = _client_ip_from_http_scope(request.scope, RATE_LIMIT_TRUST_PROXY_HEADERS)
+    ok, ra, _ = await RATE_LIMITER.allow(
+        key="http:clean_cache:all",
+        capacity=float(CLEAN_CACHE_ALL_BURST),
+        refill_rate=_rpm_to_rps(float(CLEAN_CACHE_ALL_RPM)),
+        cost=1.0,
+    )
+    if not ok:
+        return _rate_limit_reject_json(ra)
+    ok2, ra2, _ = await RATE_LIMITER.allow(
+        key=f"http:clean_cache:{ip}",
+        capacity=float(CLEAN_CACHE_IP_BURST),
+        refill_rate=_rpm_to_rps(float(CLEAN_CACHE_IP_RPM)),
+        cost=1.0,
+    )
+    if not ok2:
+        return _rate_limit_reject_json(ra2)
+
+    # ---- 路径解析 ----
+    auto_editor_dir = Path(os.environ.get(
+        "AUTO_VIDEO_EDITOR_DIR",
+        r"E:\Documents\kuaishou\auto-video-editor",
+    ))
+    node_path = auto_editor_dir / "nodes" / "node_01_clean_cache.py"
+    if not node_path.exists():
+        raise HTTPException(
+            status_code=500,
+            detail=f"auto-video-editor 路径无效: {auto_editor_dir}",
+        )
+
+    # ---- 加载 clean_cache 函数(幂等:首次 sys.path.insert 之后无副作用)----
+    av_root = str(auto_editor_dir)
+    if av_root not in sys.path:
+        sys.path.insert(0, av_root)
+    try:
+        from nodes.node_01_clean_cache import clean_cache
+    except ImportError as e:
+        raise HTTPException(status_code=500, detail=f"导入 clean_cache 失败: {e}")
+
+    # ---- 同步执行清理(本质是本地文件系统 IO,放线程池会阻塞事件循环)----
+    result_state = clean_cache({"session_id": "manual_clean_cache", "error_log": []})
+    return JSONResponse({
+        "ok": True,
+        "cleaned_paths": result_state.get("cache_cleaned_paths", []),
+        "errors": result_state.get("error_log", []),
+    })
+
 
 @api.post("/sessions/{session_id}/cancel")
 async def cancel_session_turn(session_id: str):

@@ -43,6 +43,7 @@ const __OS_I18N = {
     // sidebar
     "sidebar.toggle": "收起/展开侧边栏",
     "sidebar.new_chat": "创建新对话",
+    "sidebar.clean_cache": "清理缓存",
     "sidebar.history_title": "对话历史",
     "sidebar.history_empty": "暂无历史会话",
     "sidebar.history_aria": "历史会话列表",
@@ -115,6 +116,10 @@ const __OS_I18N = {
     "toast.switch_while_streaming": "正在生成回复，暂时无法切换会话。请先等待完成或打断当前回复。",
     "toast.session_restore_unavailable": "暂时无法从服务器恢复会话（网络或服务繁忙）。请稍后刷新或重试；本地会话 ID 已保留。",
     "toast.uploading_interrupt_send": "素材正在上传中，暂时无法发送新消息。已为你打断当前回复；上传完成后再按 Enter 发送。",
+    "toast.clean_cache_running": "正在清理缓存…",
+    "toast.clean_cache_done": "已清理 {n} 个路径",
+    "toast.clean_cache_done_none": "没有可清理的缓存",
+    "toast.clean_cache_failed": "清理缓存失败：{msg}",
     "toast.media_all_filtered": "仅支持上传视频或图片文件。",
     "toast.media_partial_filtered": "已过滤 {n} 个不支持的文件类型，仅上传视频/图片。",
     "toast.audio_not_supported": "暂不支持音频文件上传（后端尚未支持音频处理）。",
@@ -167,6 +172,7 @@ const __OS_I18N = {
     // sidebar
     "sidebar.toggle": "Collapse/expand sidebar",
     "sidebar.new_chat": "New chat",
+    "sidebar.clean_cache": "Clean cache",
     "sidebar.history_title": "History",
     "sidebar.history_empty": "No past chats yet",
     "sidebar.history_aria": "Chat history list",
@@ -239,6 +245,10 @@ const __OS_I18N = {
     "toast.switch_while_streaming": "A reply is still being generated. Please wait or interrupt before switching chats.",
     "toast.session_restore_unavailable": "Could not restore the session from the server (network or temporary overload). Please retry later or refresh. Your local session id is kept.",
     "toast.uploading_interrupt_send": "Media is uploading, so a new message can't be sent yet. I interrupted the current reply; press Enter after the upload finishes.",
+    "toast.clean_cache_running": "Cleaning cache…",
+    "toast.clean_cache_done": "Cleaned {n} paths",
+    "toast.clean_cache_done_none": "No cache to clean",
+    "toast.clean_cache_failed": "Cache cleanup failed: {msg}",
     "toast.media_all_filtered": "Only video or image files are supported.",
     "toast.media_partial_filtered": "{n} unsupported file(s) were filtered; only video/image files will be uploaded.",
     "toast.audio_not_supported": "Audio uploads are not supported yet (backend audio processing is not available).",
@@ -2454,6 +2464,7 @@ class App {
     this._quickPromptIdx = 0;
     this.sidebarToggleBtn = $("#sidebarToggle");
     this.createDialogBtn = $("#createDialogBtn");
+    this.cleanCacheBtn = $("#cleanCacheBtn");
     this.devbarToggleBtn = $("#devbarToggle");
     this.devbarEl = $("#devbar");
     this.sessionHistoryListEl = $("#sessionHistoryList");
@@ -2490,6 +2501,50 @@ class App {
     if (!this.ui || !this.ui.showToastI18n) return;
     this.ui.showToastI18n("toast.switch_while_streaming", {});
     setTimeout(() => this.ui.hideToast(), 1800);
+  }
+
+  async cleanCache() {
+    // 用户主动点击「清理缓存」按钮 → POST /api/system/clean-cache
+    // 服务端会调用 auto-video-editor/nodes/node_01_clean_cache.clean_cache,
+    // 清掉 CACHE_PATHS_TO_CLEAN 里的三类路径(剪映缓存 / OpenStoryline 临时 / jianying_workflow_tmp)。
+    // 按钮按下后置灰 + 改文案,完成或失败后恢复;连点由后端 RATE_LIMITER 防住。
+    const btn = this.cleanCacheBtn;
+    if (!btn || btn.disabled) return;
+    if (!this.ui || typeof this.ui.showToastI18n !== "function") {
+      console.warn("[cleanCache] toast 组件未就绪");
+      return;
+    }
+
+    btn.disabled = true;
+    const oldIcon = btn.querySelector(".sidebar-action-icon")?.innerHTML || "🧹";
+    const iconEl = btn.querySelector(".sidebar-action-icon");
+    const textEl = btn.querySelector(".sidebar-action-text");
+    if (iconEl) iconEl.textContent = "⏳";
+    if (textEl) textEl.textContent = __t("toast.clean_cache_running");
+
+    try {
+      const resp = await fetch("/api/system/clean-cache", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+      const data = await resp.json().catch(() => ({}));
+      if (!resp.ok) {
+        throw new Error(data.detail || data.message || `HTTP ${resp.status}`);
+      }
+      const paths = Array.isArray(data.cleaned_paths) ? data.cleaned_paths : [];
+      const key = paths.length > 0 ? "toast.clean_cache_done" : "toast.clean_cache_done_none";
+      const vars = paths.length > 0 ? { n: paths.length } : {};
+      this.ui.showToastI18n(key, vars);
+      setTimeout(() => this.ui.hideToast(), 2200);
+    } catch (err) {
+      const msg = (err && (err.message || err)) || "unknown";
+      this.ui.showToastI18n("toast.clean_cache_failed", { msg });
+      setTimeout(() => this.ui.hideToast(), 3000);
+    } finally {
+      btn.disabled = false;
+      if (iconEl) iconEl.textContent = oldIcon;
+      if (textEl) textEl.textContent = __t("sidebar.clean_cache");
+    }
   }
 
   _isSwitchBlocked() {
@@ -3663,6 +3718,9 @@ class App {
         }
         this.newSession();
       });
+    }
+    if (this.cleanCacheBtn) {
+      this.cleanCacheBtn.addEventListener("click", () => this.cleanCache());
     }
 
     if (this.sessionHistoryListEl && !this._sessionHistoryBound) {

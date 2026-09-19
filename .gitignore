@@ -91,3 +91,9 @@ bridge/route_db/
 bridge/assets/
 bridge/cases/*/scratchpad/
 bridge/cases/*/tmp/
+
+# === 本机运行时产物（不入仓）===
+# .worktrees/ 是 MiniMax Code 的 git fork 工作树残留（嵌套 git 仓库 + ownership json）
+.worktrees/
+# inputs/ 是用户素材目录（视频/图片源文件），不入仓
+inputs/

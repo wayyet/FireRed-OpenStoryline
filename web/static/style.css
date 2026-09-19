@@ -178,6 +178,16 @@ body.dev-mode.devbar-collapsed{
   border-color: var(--border);
 }
 .sidebar-action.primary{ border-color: var(--border); }
+.sidebar-action.secondary{
+  border-style: dashed;
+  border-color: var(--border);
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+.sidebar-action.secondary:hover{
+  background: var(--surface-2);
+  color: var(--text);
+}
 
 .sidebar-action-icon{
   width: 20px;
